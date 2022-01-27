@@ -1,8 +1,8 @@
 var config = {
   type: Phaser.AUTO,
   parent: 'phaser-example',
-  width: 800,
-  height: 600,
+  width: 1600,
+  height: 1280,
   physics: {
     default: 'arcade',
     arcade: {
@@ -101,6 +101,22 @@ function create() {
 
 this.physics.add.collider(shots, platforms);
 
+this.blueScoreText = this.add.text(16, 16, '', { fontSize: '32px', fill: '#0000FF' });
+this.redScoreText = this.add.text(584, 16, '', { fontSize: '32px', fill: '#FF0000' });
+
+this.socket.on('scoreUpdate', function (scores) {
+  self.blueScoreText.setText('Blue: ' + scores.blue);
+  self.redScoreText.setText('Red: ' + scores.red);
+});
+
+this.socket.on('starLocation', function (starLocation) {
+  if (self.star) self.star.destroy();
+  self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star');
+  self.physics.add.overlap(self.ship, self.star, function () {
+    this.socket.emit('starCollected');
+  }, null, self);
+});
+
 
 }
 function update() {
@@ -117,9 +133,6 @@ function update() {
 
     if (this.cursors.up.isDown && this.ship.body.touching.down) {
       this.ship.setVelocityY(-300);
-    //   this.physics.velocityFromRotation(this.ship.rotation + 1.5, 100, this.ship.body.acceleration);
-    // } else {
-    //   this.ship.setAcceleration(0);
     }
 
     //this.physics.world.wrap(this.ship, 5);
@@ -127,17 +140,21 @@ function update() {
     // emit player movement
     var x = this.ship.x;
     var y = this.ship.y;
-    var r = this.ship.rotation;
-    if (this.ship.oldPosition && (x !== this.ship.oldPosition.x || y !== this.ship.oldPosition.y || r !== this.ship.oldPosition.rotation)) {
-      this.socket.emit('playerMovement', { x: this.ship.x, y: this.ship.y, rotation: this.ship.rotation });
+
+    if (this.ship.oldPosition && (x !== this.ship.oldPosition.x || y !== this.ship.oldPosition.y)) {
+      this.socket.emit('playerMovement', { x: this.ship.x, y: this.ship.y });
     }
     // save old position data
     this.ship.oldPosition = {
       x: this.ship.x,
-      y: this.ship.y,
-      rotation: this.ship.rotation
+      y: this.ship.y
     };
   }
+
+  // if(this.bomb) {
+  //   x = this.bomb.x
+  //   console.log("There is a bomb");
+  // }
 
 
 
@@ -153,6 +170,9 @@ function addPlayer(self, playerInfo) {
   self.physics.add.collider(self.ship, platforms);
   self.ship.setBounce(0.2);
   self.ship.setGravityY(200);
+  // if(otherPlayer) {
+  //   self.physics.add.collider(self.ship, otherPlayer);
+  // }
   //self.ship.setDrag(100);
   //self.ship.setAngularDrag(100);
   //self.ship.setMaxVelocity(200);
@@ -166,5 +186,6 @@ function addOtherPlayers(self, playerInfo) {
     otherPlayer.setTint(0xff0000);
   }
   otherPlayer.playerId = playerInfo.playerId;
+  self.physics.add.collider(otherPlayer, self.ship);
   self.otherPlayers.add(otherPlayer);
 }
