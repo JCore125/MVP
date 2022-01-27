@@ -10,6 +10,10 @@ var star = {
   x: Math.floor(Math.random() * 700) + 50,
   y: Math.floor(Math.random() * 500) + 50
 };
+var bomb = {
+  x: Math.floor(Math.random() * 700) + 50,
+  y: Math.floor(Math.random() * 500) + 50
+};
 var scores = {
   blue: 0,
   red: 0
@@ -36,6 +40,8 @@ io.on('connection', function (socket) {
   socket.emit('starLocation', star);
   // send the current scores
   socket.emit('scoreUpdate', scores);
+  // send the bomb location to the new player
+  socket.emit('bombLocation', bomb);
   // update all other players of the new player
   socket.broadcast.emit('newPlayer', players[socket.id]);
   socket.on('disconnect', function () {

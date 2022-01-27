@@ -117,6 +117,30 @@ this.socket.on('starLocation', function (starLocation) {
   }, null, self);
 });
 
+this.socket.on('bombLocation', function (bombLocation) {
+  if(self.bomb) self.bomb.destroy();
+  self.bomb = self.physics.add.image(bombLocation.x, bombLocation.y, 'bomb').setBounce(1).setGravityY(100);
+  self.physics.add.collider(self.bomb, platforms);
+  self.physics.add.overlap(self.ship, self.bomb, function () {
+    this.socket.emit('bombCollision');
+  }, null, self);
+});
+
+this.anims.create({
+  key: 'left',
+  frames: this.anims.generateFrameNumbers('dude', { start: 0, end: 3}), frameRate: 10, repeat: -1
+});
+
+this.anims.create({
+  key: 'turn',
+  frames: [ { key: 'dude', frame: 4 } ],
+  frameRate: 20
+});
+
+this.anims.create({
+  key: 'right',
+  frames: this.anims.generateFrameNumbers('dude', { start: 5, end: 8}), frameRate: 10, repeat: -1
+});
 
 }
 function update() {
@@ -163,9 +187,9 @@ function update() {
 function addPlayer(self, playerInfo) {
   self.ship = self.physics.add.image(playerInfo.x, playerInfo.y, 'dude').setOrigin(0.5, 0.5);
   if (playerInfo.team === 'blue') {
-    //self.ship.setTint(0x0000ff);
+    self.ship.setTint(0x0000ff);
   } else {
-    //self.ship.setTint(0xff0000);
+    self.ship.setTint(0xff0000);
   }
   self.physics.add.collider(self.ship, platforms);
   self.ship.setBounce(0.2);
