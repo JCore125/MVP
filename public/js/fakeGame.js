@@ -120,7 +120,7 @@ this.socket.on('scoreUpdate', function (scores) {
 
 this.socket.on('starLocation', function (starLocation) {
   if (self.star) self.star.destroy();
-  self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star').setBounce(.75).setGravityY(50);
+  self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star').setBounce(1).setGravityY(50);
   self.star.setVelocity(Phaser.Math.Between(-50, 50), 20);
   self.physics.add.collider(self.star, platforms);
   self.star.setCollideWorldBounds(true);
