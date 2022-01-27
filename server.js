@@ -68,12 +68,33 @@ io.on('connection', function (socket) {
     } else {
       scores.blue += 10;
     }
-    star.x = Math.floor(Math.random() * 700) + 50;
-    star.y = Math.floor(Math.random() * 500) + 50;
+    if(scores.red === 100) {
+      console.log("Red Team Wins!");
+      scores.red = 0;
+      scores.blue = 0;
+    }
+    if(scores.blue === 100) {
+      console.log("Blue Team Wins!")
+      scores.red = 0;
+      scores.blue = 0;
+    }
+    star.x = Math.floor(Math.random() * 1000) + 50;
+    star.y = Math.floor(Math.random() * 1000) - 300;
     io.emit('starLocation', star);
     io.emit('scoreUpdate', scores);
   });
 
+  socket.on('bombCollision', function () {
+    if (players[socket.id].team === 'red') {
+      scores.red -= 10;
+    } else {
+      scores.blue -= 10;
+    }
+    bomb.x = Math.floor(Math.random() * 1500) + 50;
+    bomb.y = Math.floor(Math.random() * 1200) + 100;
+    io.emit('bombLocation', bomb);
+    io.emit('scoreUpdate', scores);
+  });
 
 });
 server.listen(process.env.PORT || 8081, function () {

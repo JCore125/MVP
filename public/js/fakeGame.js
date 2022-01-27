@@ -1,8 +1,8 @@
 var config = {
   type: Phaser.AUTO,
   parent: 'phaser-example',
-  width: 1600,
-  height: 1280,
+  width: 1400,
+  height: 1000,
   physics: {
     default: 'arcade',
     arcade: {
@@ -21,11 +21,13 @@ var config = {
 var game = new Phaser.Game(config);
 var platforms;
 var shots;
+var music;
 
 function preload() {
-  this.load.image('ship', '../assets/spaceShips_001.png');
-  this.load.image('otherPlayer', '../assets/enemyBlack5.png');
-  this.load.image('sky', '../assets/introBg.png');
+
+
+  this.load.audio('bgm', '../assets/Bgm.mp3')
+  this.load.image('BG', '../assets/introBg.png');
   this.load.image('ground', '../assets/platform.png');
   this.load.image('star', '../assets/star.png');
   this.load.image('bomb', '../assets/bomb.png');
@@ -36,6 +38,9 @@ function preload() {
 }
 function create() {
 
+  //music = this.add.audio('bgm');
+  //music.play();
+  this.add.image(400, -950, 'BG').setScale(3);
   var self = this;
   this.socket = io();
   this.otherPlayers = this.physics.add.group();
@@ -70,11 +75,15 @@ function create() {
 
   platforms = this.physics.add.staticGroup();
 
-  platforms.create(400, 600, 'ground').setScale(3).refreshBody();
+  platforms.create(350, 800, 'ground').setScale(4).refreshBody();
+  platforms.create(2100, 800, 'ground').setScale(4).refreshBody();
 
   platforms.create(600, 400, 'ground');
+  platforms.create(50, 500, 'ground');
   platforms.create(50, 250, 'ground');
-  platforms.create(750, 220, 'ground');
+  platforms.create(750, 230, 'ground');
+  platforms.create(700, 600, 'ground');
+  platforms.create(1200, 500, 'ground');
 
 //   stars = this.physics.add.group({
 //     key: 'star',
@@ -91,18 +100,18 @@ function create() {
   shots = this.physics.add.group()
 
 
-  var bomb = shots.create(20, 16, 'bomb')
-  bomb.setBounce(1);
-  bomb.setGravityY(100);
-  bomb.setCollideWorldBounds(true);
-  bomb.setVelocity(Phaser.Math.Between(-200, 200), 20);
+  // var bomb = shots.create(20, 16, 'bomb')
+  // bomb.setBounce(1);
+  // bomb.setGravityY(100);
+  // bomb.setCollideWorldBounds(true);
+  // bomb.setVelocity(Phaser.Math.Between(-200, 200), 20);
 
 
 
 this.physics.add.collider(shots, platforms);
 
 this.blueScoreText = this.add.text(16, 16, '', { fontSize: '32px', fill: '#0000FF' });
-this.redScoreText = this.add.text(584, 16, '', { fontSize: '32px', fill: '#FF0000' });
+this.redScoreText = this.add.text(1260, 16, '', { fontSize: '32px', fill: '#FF0000' });
 
 this.socket.on('scoreUpdate', function (scores) {
   self.blueScoreText.setText('Blue: ' + scores.blue);
@@ -111,7 +120,11 @@ this.socket.on('scoreUpdate', function (scores) {
 
 this.socket.on('starLocation', function (starLocation) {
   if (self.star) self.star.destroy();
-  self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star');
+  self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star').setBounce(.75).setGravityY(50);
+  self.star.setVelocity(Phaser.Math.Between(-50, 50), 20);
+  self.physics.add.collider(self.star, platforms);
+  self.star.setCollideWorldBounds(true);
+
   self.physics.add.overlap(self.ship, self.star, function () {
     this.socket.emit('starCollected');
   }, null, self);
@@ -121,6 +134,8 @@ this.socket.on('bombLocation', function (bombLocation) {
   if(self.bomb) self.bomb.destroy();
   self.bomb = self.physics.add.image(bombLocation.x, bombLocation.y, 'bomb').setBounce(1).setGravityY(100);
   self.physics.add.collider(self.bomb, platforms);
+  self.bomb.setCollideWorldBounds(true);
+  self.bomb.setVelocity(Phaser.Math.Between(-200, 200), 200);
   self.physics.add.overlap(self.ship, self.bomb, function () {
     this.socket.emit('bombCollision');
   }, null, self);
@@ -148,18 +163,22 @@ function update() {
 
   if (this.ship) {
     if (this.cursors.left.isDown) {
+      this.ship.anims.play('left', true);
       this.ship.setVelocityX(-150);
     } else if (this.cursors.right.isDown) {
+      this.ship.anims.play('right', true);
       this.ship.setVelocityX(150);
     } else {
+      this.ship.anims.play('turn', true);
       this.ship.setVelocityX(0);
     }
 
     if (this.cursors.up.isDown && this.ship.body.touching.down) {
-      this.ship.setVelocityY(-300);
+      this.ship.setVelocityY(-450);
     }
 
-    //this.physics.world.wrap(this.ship, 5);
+    this.physics.world.wrap(this.ship, 5);
+
 
     // emit player movement
     var x = this.ship.x;
@@ -185,7 +204,7 @@ function update() {
 }
 
 function addPlayer(self, playerInfo) {
-  self.ship = self.physics.add.image(playerInfo.x, playerInfo.y, 'dude').setOrigin(0.5, 0.5);
+  self.ship = self.physics.add.sprite(playerInfo.x, playerInfo.y, 'dude').setOrigin(0.5, 0.5);
   if (playerInfo.team === 'blue') {
     self.ship.setTint(0x0000ff);
   } else {
@@ -193,7 +212,7 @@ function addPlayer(self, playerInfo) {
   }
   self.physics.add.collider(self.ship, platforms);
   self.ship.setBounce(0.2);
-  self.ship.setGravityY(200);
+  self.ship.setGravityY(500);
   // if(otherPlayer) {
   //   self.physics.add.collider(self.ship, otherPlayer);
   // }
